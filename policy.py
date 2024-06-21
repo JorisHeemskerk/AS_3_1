@@ -15,7 +15,8 @@ class Policy:
     def __init__(
         self, 
         network: nn.Module, 
-        epsilon: float
+        epsilon: float,
+        decay: float
     )-> None:
         """
         Initializer for Policy.
@@ -25,6 +26,7 @@ class Policy:
         """
         self._network = network
         self.epsilon = epsilon
+        self.decay = decay
 
     def load(self, filename: str)-> None:
         """
@@ -44,23 +46,22 @@ class Policy:
 
     def forward(self, state: State)-> torch.Tensor:
         state_to_pass = torch.tensor(astuple(state), dtype=torch.float32).unsqueeze(0)
-        # print(f"{state_to_pass = }")
+        
         return self._network.forward(
             state_to_pass
         ).squeeze(0)
     
-    def decay()-> None:
+    def decay_epsilon(self)-> None:
         """
-        TODO: degrade epsilon (optional)
+        Decrease the epsilon by mulitplying it with a constant.
         """
-        pass
+        self.epsilon *= self.decay
 
     def train(
         self, 
         X_train: list[State],
         y_train: list[torch.Tensor],
         batch_size: int,
-        num_epochs: int,
         loss_fn: nn.Module=nn.CrossEntropyLoss(),
         optimizer: torch.optim.Optimizer=torch.optim.Adam
     )-> None:
@@ -69,9 +70,8 @@ class Policy:
 
         @param X_train: list of State object to train
         @param y_train: list of labels. 
-         Can be either floats or torch.tensors 
         @param batch_size: batch size for training the model
-        @param num_epochs: number of ecpohs for training the model
+        @param num_epochs: number of epochs for training the model
         @param loss_fn: loss function, default=nn.CrossEntropyLoss
         @param optimizer: optimizer function, default=torch.optim.Adam
         """
@@ -91,8 +91,7 @@ class Policy:
         self._network.train_model(
             train_loader=train_loader, 
             loss_fn=loss_fn, 
-            optimizer=optimizer, 
-            num_epochs=num_epochs
+            optimizer=optimizer
         ) 
 
     def select_action(self, state: State)-> Action:

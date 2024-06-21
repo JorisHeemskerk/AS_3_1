@@ -4,7 +4,15 @@ from tqdm import tqdm
 
 
 class QNetwork(nn.Module):
-    def __init__(self):
+    """
+    QNetwork class.
+
+    Extends nn.Module class
+    """
+    def __init__(self)-> None:
+        """
+        Initializer for QNetwork.
+        """
         super().__init__()
         self.linear_relu_stack = nn.Sequential(
             nn.Linear(8, 150),
@@ -23,34 +31,37 @@ class QNetwork(nn.Module):
         self.to(self.device)
         print(f"Using \033[32m{self.device }\033[0m device\n")
 
-    def forward(self, x: torch.Tensor)-> torch.Tensor:
-        x = x.to(self.device)
-        # print(f"{x = }, {type(x) = }")
-        logits = self.linear_relu_stack(x)
-        # print(f"{logits = }, {type(logits) = }")
+    def forward(self, state: torch.Tensor)-> torch.Tensor:
+        """
+        Gets the output from the model.
+
+        @param state: input for the model
+        """
+        state = state.to(self.device)
+        logits = self.linear_relu_stack(state)
         return logits
     
     def train_model(
         self, 
         train_loader: torch.utils.data.DataLoader, 
         loss_fn: nn.Module, 
-        optimizer: torch.optim, 
-        num_epochs: int
-    ):
-        for epoch in range(num_epochs):
-            print(f"-------------------------------\nEpoch {epoch+1}")
-            for batch, (X, y) in tqdm(enumerate(train_loader), total=len(train_loader)):
-                X, y = X.to(self.device), y.to(self.device)
-                
-                # Compute prediction and loss
-                pred = self.forward(X)
-                loss = loss_fn(pred, y)
+        optimizer: torch.optim
+        )-> None:
+        """
+        Trains the model.
 
-                # Backpropagation
-                loss.backward(retain_graph=True)
-                optimizer.zero_grad()
-                optimizer.step()
+        @param train_loader: trainingsdata
+        @param loss_fn: loss function
+        @param optimizer: optimizer function
+        """
+        for X, y in train_loader:
+            X, y = X.to(self.device), y.to(self.device)
+            
+            pred = self.forward(X)
+            loss = loss_fn(pred, y)
 
-                if batch % 100 == 0:
-                    loss, current = loss.item(), batch * len(X)
-        print("Training done!")
+            optimizer.zero_grad()
+
+            loss.backward()
+            
+            optimizer.step()

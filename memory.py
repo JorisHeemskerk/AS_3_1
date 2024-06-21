@@ -41,7 +41,7 @@ class Memory:
 
         @return np.ndarray with sample list
         """
-        assert self._max_idx <= self.__idx, \
+        assert batch_size <= self.__idx, \
             "Not enough items in memory, stupid." \
             f"Tried to access {batch_size} items from memory" \
             f" of size {self.__idx + 1}."
