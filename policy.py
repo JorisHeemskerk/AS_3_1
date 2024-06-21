@@ -4,6 +4,8 @@ from state import State
 import torch
 from torch import nn
 from dataclasses import astuple
+import random
+
 
 class Policy:
     """
@@ -41,11 +43,11 @@ class Policy:
         torch.save(self._network.state_dict(), filename)
 
     def forward(self, state: State)-> torch.Tensor:
-        state_to_pass = torch.tensor(astuple(state))
-        print(f"{state_to_pass = }")
+        state_to_pass = torch.tensor(astuple(state), dtype=torch.float32).unsqueeze(0)
+        # print(f"{state_to_pass = }")
         return self._network.forward(
             state_to_pass
-        )
+        ).squeeze(0)
     
     def decay()-> None:
         """
@@ -74,16 +76,16 @@ class Policy:
         @param optimizer: optimizer function, default=torch.optim.Adam
         """
         train_dataset = torch.utils.data.TensorDataset(
-            torch.tensor([astuple(x) for x in X_train]),
+            torch.tensor([astuple(x) for x in X_train], dtype=torch.float32),
             torch.stack(y_train, dim=0)
         )
+
         train_loader = torch.utils.data.DataLoader(
             train_dataset, 
             batch_size=batch_size, 
             shuffle=True
         )
 
-        loss_fn = nn.CrossEntropyLoss()
         optimizer = optimizer(self._network.parameters(), lr=0.001)
 
         self._network.train_model(
@@ -101,10 +103,6 @@ class Policy:
 
         @return Action with Action to perform.
         """
-        a = torch.argmax(self.forward(state=state))
-        print(f"in Policy::select_action1, {a = }")
-        print(f"in Policy::select_action2, {a.item()}")
-        print(f"in Policy::select_action2, {type(a.item())}")
-        print(f"in Policy::select_action2, {Action(a.item())}")
-        # exit(0)
-        return Action(a.item())
+        if random.random() < self.epsilon:
+            return Action(torch.argmax(self.forward(state=state)).item())
+        return random.choice(list(Action))

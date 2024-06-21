@@ -77,7 +77,8 @@ class Agent:
         seed: int=42,
         )-> None:
 
-        for _ in range(n_iterations):
+        for i in range(n_iterations):
+            print(f"running iteration {i}")
             while not self.memory.is_full():
                 self.run(environment=environment, seed=seed)
 
@@ -96,21 +97,18 @@ class Agent:
     def run(self, environment: gym.Env, seed: int=42)-> None:
         """
         """
-        print("Welcome to the run function")
+        # print("Welcome to the run function")
         start_state, _ = environment.reset(seed=seed)
         start_state = State(*start_state)
-        i=-1
         while True:
-            i += 1
-            print(f"Running! At iteration {i}.")
             action = self.policy.select_action(start_state)
             state_prime, reward, is_terminated, truncated, _ = \
                 environment.step(action.value)
             state_prime = State(*state_prime)
 
-            print(f"trying to store to memory. Currently {self.memory._Memory__idx+1}/{self.memory.max_size} items stored")
+            # print(f"trying to store to memory. Currently {self.memory._Memory__idx+1}/{self.memory.max_size} items stored")
             if not self.memory.is_full():
-                print("actually storing to memory")
+                # print("actually storing to memory")
                 self.memory.store(
                     Transition(
                         start_state, 
@@ -120,7 +118,7 @@ class Agent:
                         is_terminated
                     )
                 )
-            print(f"checking if terminated. {is_terminated = }, {truncated = }")
+            # print(f"checking if terminated. {is_terminated = }, {truncated = }")
             if is_terminated or truncated:
                 environment.reset(seed=seed)
                 break
