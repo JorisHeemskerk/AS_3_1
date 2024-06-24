@@ -19,6 +19,7 @@ class Memory:
         self._max_idx = self.max_size - 1
         self._queue = matplotlib.empty(self.max_size, dtype=Transition)
         self.__idx = 0
+        self._size = 0
 
     def store(self, transition: Transition)-> None:
         """
@@ -26,9 +27,13 @@ class Memory:
 
         @param transition: Transition object to store
         """
-        assert self.__idx < self._max_idx, \
-            f"OH NO! You tried to insert the {self.__idx + 2}th element in a" \
-            f"memory object that is only {self.max_size} elements long."
+        if self.__idx > self._max_idx:
+            self.__idx = 0
+        else:
+            self._size += 1
+        # assert self.__idx < self._max_idx, \
+        #     f"OH NO! You tried to insert the {self.__idx + 2}th element in a" \
+        #     f"memory object that is only {self.max_size} elements long."
 
         self._queue[self.__idx] = transition
         self.__idx += 1
@@ -41,12 +46,12 @@ class Memory:
 
         @return np.ndarray with sample list
         """
-        assert batch_size <= self.__idx, \
-            "Not enough items in memory, stupid." \
+        assert batch_size < self._size, \
+            "Not enough items in memory, stupid. " \
             f"Tried to access {batch_size} items from memory" \
-            f" of size {self.__idx + 1}."
+            f" of size {self._size}."
         return matplotlib.random.choice(
-            self._queue[:self.__idx], 
+            self._queue[:self._size], 
             size=batch_size, 
             replace=False
         )
@@ -58,13 +63,13 @@ class Memory:
         self._queue = matplotlib.empty(self.max_size, dtype=Transition)
         self.__idx = 0
 
-    def is_full(self)-> bool:
-        """
-        Check if the memory is full.
+    # def is_full(self)-> bool:
+    #     """
+    #     Check if the memory is full.
 
-        @return bool confirming whether the memory is full
-        """
-        return self.__idx == self._max_idx
+    #     @return bool confirming whether the memory is full
+    #     """
+    #     return self.__idx == self._max_idx
 
     def __str__(self)-> str:
         return str(self._queue)

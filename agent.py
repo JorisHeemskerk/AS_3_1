@@ -7,6 +7,8 @@ import torch
 from torch import nn
 import gymnasium as gym
 from tqdm import tqdm
+import matplotlib.pyplot as plt
+import numpy as np
 
 
 class Agent:
@@ -23,10 +25,12 @@ class Agent:
         """
         self.policy = policy
         self.memory = memory
+        self.rewards = []
 
     def train_batch(
         self, 
         gamma: float, 
+        memory_batch_size: int,
         batch_size: int,
         loss_fn: nn.Module=nn.CrossEntropyLoss(),
         optimizer: torch.optim.Optimizer=torch.optim.Adam
@@ -35,14 +39,18 @@ class Agent:
         Train the policy on a batch of transitions.
 
         @param gamma: discount value
+        @param memory_batch_size: number of samples from memory
         @param batch_size: batch size for training the model
         @param loss_fn: loss function, default=nn.CrossEntropyLoss
         @param optimizer: optimizer function, default=torch.optim.Adam 
         """
-        if self.memory._Memory__idx < batch_size:
-            return
+        # TODO: miss wel bewaren zo idk
+        # if self.memory._Memory__idx < batch_size:
+        #     return
 
-        batch: list[Transition] = self.memory.get_batch(batch_size=batch_size)
+        batch: list[Transition] = self.memory.get_batch(
+            batch_size=memory_batch_size
+        )
 
         train_Xs = []
         train_ys = []
@@ -82,7 +90,9 @@ class Agent:
         environment: gym.Env,
         n_iterations: int,
         gamma: float, 
+        memory_batch_size: int,
         batch_size: int,
+        steps_limit:int,
         loss_fn: nn.Module=nn.CrossEntropyLoss(),
         optimizer: torch.optim.Optimizer=torch.optim.Adam,
         n_episodes: int=64,
@@ -94,58 +104,74 @@ class Agent:
         @param environment: the environment
         @param n_iterations: number of iterations
         @param gamma: discount value
+        @param memory_batch_size: number of samples from memory
         @param batch_size: batch size for training the model
         @param loss_fn: loss function, default=nn.CrossEntropyLoss
         @param optimizer: optimizer function, default=torch.optim.Adam
         @param n_episodes: number of episodes
         @param seed: random seed for the environment initialisation
         """
-        for i in range(n_iterations):
-            for _ in tqdm(range(n_episodes)):
-                self.run(
-                    environment=environment,
-                    seed=seed
-                )
+        self.rewards = []
+        for i in tqdm(range(n_iterations), desc="iteration "):
+            if i > 100 and np.average(self.rewards[-100:]) >= 100:
+                print("Done training")
+                return
 
+            for _ in range(n_episodes):
+                reward = self.run(
+                    environment=environment,
+                    seed=seed,
+                    steps_limit=steps_limit
+                )
+                self.rewards.append(reward)
+            for _ in range(10):
                 self.train_batch(
                     gamma=gamma,
+                    memory_batch_size=memory_batch_size,
                     batch_size=batch_size,
                     loss_fn=loss_fn,
                     optimizer=optimizer
                 )
             
-                self.policy.decay_epsilon()
-            print(f"klaar met iteratie {i+1}")
+            self.policy.decay_epsilon()
 
-            
-
-    def run(self, environment: gym.Env, seed: int=42)-> None:
+    def run(self, environment: gym.Env, seed: int=42, steps_limit:int=float("inf"))-> float:
         """
         Runs a single instance of the simulation.
 
         @param environment: the environment
         @param seed: random seed for the environment initialisation
         """
+        total_reward = 0
         start_state, _ = environment.reset(seed=seed)
         start_state = State(*start_state)
-        while True:
+        step_number = 0
+        while step_number < steps_limit:
             action = self.policy.select_action(start_state)
             state_prime, reward, is_terminated, truncated, _ = \
                 environment.step(action.value)
             state_prime = State(*state_prime)
 
-            if not self.memory.is_full():
-                self.memory.store(
-                    Transition(
-                        start_state, 
-                        action,
-                        reward,
-                        state_prime,
-                        is_terminated
-                    )
+            total_reward += reward
+            
+            self.memory.store(
+                Transition(
+                    start_state, 
+                    action,
+                    reward,
+                    state_prime,
+                    is_terminated
                 )
+            )
 
             if is_terminated or truncated:
                 break
 
             start_state = state_prime
+            step_number+= 1
+        
+        return total_reward
+    
+    def plot(self)-> None:
+        plt.plot(self.rewards)
+        plt.show()

@@ -1,5 +1,6 @@
 import torch
 from torch import nn
+from torch.cuda.amp import autocast, GradScaler
 from tqdm import tqdm
 
 
@@ -54,14 +55,22 @@ class QNetwork(nn.Module):
         @param loss_fn: loss function
         @param optimizer: optimizer function
         """
+        scaler = GradScaler() 
+        
         for X, y in train_loader:
             X, y = X.to(self.device), y.to(self.device)
-            
-            pred = self.forward(X)
-            loss = loss_fn(pred, y)
+
+            with autocast():
+                pred = self.forward(X)
+                loss = loss_fn(pred, y)
+            # pred = self.forward(X)
+            # loss = loss_fn(pred, y)
 
             optimizer.zero_grad()
 
-            loss.backward()
+            scaler.scale(loss).backward()
+            # loss.backward()
             
-            optimizer.step()
+            scaler.step(optimizer)
+            scaler.update()
+            # optimizer.step()

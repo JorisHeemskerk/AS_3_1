@@ -103,5 +103,5 @@ class Policy:
         @return Action with Action to perform.
         """
         if random.random() < self.epsilon:
-            return Action(torch.argmax(self.forward(state=state)).item())
-        return random.choice(list(Action))
+            return random.choice(list(Action))
+        return Action(torch.argmax(self.forward(state=state)).item())
