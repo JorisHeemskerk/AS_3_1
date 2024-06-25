@@ -180,4 +180,7 @@ class Agent:
         p = np.poly1d(z)
         plt.plot(x, p(x))
         plt.plot(list(range(-100, 200)))
+        plt.title("Total reward for run per episode per iteration.")
+        plt.xlabel("episode per iteration.")
+        plt.ylabel("Total reward for run.")
         plt.show()
