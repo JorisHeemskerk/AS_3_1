@@ -162,7 +162,10 @@ class Agent:
         """
         self.rewards = []
         pbar = tqdm(range(n_episodes))
-        for _ in pbar:
+        for i in pbar:
+            if i > 100 and np.average(self.rewards[-100:]) >= 200:
+                print("Done training")
+                return
             total_reward = 0
             start_state, _ = environment.reset(seed=seed)
             start_state = State(*start_state)
