@@ -164,7 +164,7 @@ class Agent:
         pbar = tqdm(range(n_episodes))
         for i in pbar:
             if i > 100 and np.average(self.rewards[-100:]) >= 200:
-                print("Done training")
+                print("Done training, it good enough d=====(￣▽￣*)b")
                 return
             total_reward = 0
             start_state, _ = environment.reset(seed=seed)
