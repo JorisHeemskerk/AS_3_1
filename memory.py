@@ -29,7 +29,7 @@ class Memory:
         """
         if self.__idx > self._max_idx:
             self.__idx = 0
-        else:
+        if self._size < self._max_idx:
             self._size += 1
         # assert self.__idx < self._max_idx, \
         #     f"OH NO! You tried to insert the {self.__idx + 2}th element in a" \

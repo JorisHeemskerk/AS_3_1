@@ -23,10 +23,10 @@ class QNetwork(nn.Module):
             nn.Linear(120, 4),
         )
         self.device = (
-            "cuda"if torch.cuda.is_available()
-            else 
-                "mps" if torch.backends.mps.is_available()
-            else 
+            # "cuda"if torch.cuda.is_available()
+            # else 
+            #     "mps" if torch.backends.mps.is_available()
+            # else 
                 "cpu"
         )
         self.to(self.device)
@@ -55,22 +55,22 @@ class QNetwork(nn.Module):
         @param loss_fn: loss function
         @param optimizer: optimizer function
         """
-        scaler = GradScaler() 
+        # scaler = GradScaler() 
         
         for X, y in train_loader:
             X, y = X.to(self.device), y.to(self.device)
 
-            with autocast():
-                pred = self.forward(X)
-                loss = loss_fn(pred, y.detach_())
-            # pred = self.forward(X)
-            # loss = loss_fn(pred, y.detach_())
+            # with autocast():
+            #     pred = self.forward(X)
+            #     loss = loss_fn(pred, y.detach_())
+            pred = self.forward(X)
+            loss = loss_fn(pred, y.detach_())
 
             optimizer.zero_grad()
 
-            scaler.scale(loss).backward()
-            # loss.backward()
+            # scaler.scale(loss).backward()
+            loss.backward()
             
-            scaler.step(optimizer)
-            scaler.update()
-            # optimizer.step()
+            # scaler.step(optimizer)
+            # scaler.update()
+            optimizer.step()

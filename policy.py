@@ -56,6 +56,8 @@ class Policy:
         Decrease the epsilon by mulitplying it with a constant.
         """
         self.epsilon *= self.decay
+        if self.epsilon <= 0.01:
+            self.epsilon = 0.01
 
     def train(
         self, 
