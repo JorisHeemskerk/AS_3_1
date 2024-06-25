@@ -14,7 +14,8 @@ class Policy:
 
     def __init__(
         self, 
-        network: nn.Module, 
+        network: nn.Module,
+        optimizer: torch.optim.Optimizer,
         epsilon: float,
         decay: float
     )-> None:
@@ -25,6 +26,7 @@ class Policy:
         @param epsilon: Epsilon, what did you expect...
         """
         self._network = network
+        self.optimizer = optimizer(self._network.parameters(), lr=0.001)
         self.epsilon = epsilon
         self.decay = decay
 
@@ -65,7 +67,6 @@ class Policy:
         y_train: list[torch.Tensor],
         batch_size: int,
         loss_fn: nn.Module=nn.CrossEntropyLoss(),
-        optimizer: torch.optim.Optimizer=torch.optim.Adam
     )-> None:
         """
         Train the Q network on a prepared memory batch.
@@ -75,7 +76,6 @@ class Policy:
         @param batch_size: batch size for training the model
         @param num_epochs: number of epochs for training the model
         @param loss_fn: loss function, default=nn.CrossEntropyLoss
-        @param optimizer: optimizer function, default=torch.optim.Adam
         """
         train_dataset = torch.utils.data.TensorDataset(
             torch.tensor([astuple(x) for x in X_train], dtype=torch.float32),
@@ -88,12 +88,10 @@ class Policy:
             shuffle=True
         )
 
-        optimizer = optimizer(self._network.parameters(), lr=0.001)
-
         self._network.train_model(
             train_loader=train_loader, 
             loss_fn=loss_fn, 
-            optimizer=optimizer
+            optimizer=self.optimizer
         ) 
 
     def select_action(self, state: State)-> Action:

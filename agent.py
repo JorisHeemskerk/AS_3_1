@@ -33,7 +33,6 @@ class Agent:
         memory_batch_size: int,
         batch_size: int,
         loss_fn: nn.Module=nn.CrossEntropyLoss(),
-        optimizer: torch.optim.Optimizer=torch.optim.Adam
         )-> None:
         """
         Train the policy on a batch of transitions.
@@ -42,7 +41,6 @@ class Agent:
         @param memory_batch_size: number of samples from memory
         @param batch_size: batch size for training the model
         @param loss_fn: loss function, default=nn.CrossEntropyLoss
-        @param optimizer: optimizer function, default=torch.optim.Adam 
         """
         # TODO: miss wel bewaren zo idk
         if self.memory._size <= memory_batch_size:
@@ -81,7 +79,6 @@ class Agent:
             y_train=train_ys,
             batch_size=batch_size,
             loss_fn=loss_fn,
-            optimizer=optimizer
         )
 
     # def train(
@@ -144,7 +141,6 @@ class Agent:
         batch_size: int,
         steps_limit:int,
         loss_fn: nn.Module=nn.CrossEntropyLoss(),
-        optimizer: torch.optim.Optimizer=torch.optim.Adam,
         seed: int=42,
         )-> None:
         """
@@ -198,7 +194,6 @@ class Agent:
                     memory_batch_size=memory_batch_size,
                     batch_size=batch_size,
                     loss_fn=loss_fn,
-                    optimizer=optimizer
                 ) 
                 
             self.rewards.append(total_reward)
@@ -243,14 +238,14 @@ class Agent:
         
         return total_reward
     
-    def plot(self)-> None:
+    def plot(self, sub_heading: str='')-> None:
         plt.plot(self.rewards)
         x = list(range(len(self.rewards)))
         z = np.polyfit(x, self.rewards, 1)
         p = np.poly1d(z)
         plt.plot(x, p(x))
         plt.plot(list(range(-200, 200, round(400 / len(self.rewards)))))
-        plt.title("Total reward for run per episode per iteration.")
+        plt.title(f"Total reward for run per episode per iteration.\n{sub_heading}")
         plt.xlabel("episode per iteration.")
         plt.ylabel("Total reward for run.")
         plt.show()
