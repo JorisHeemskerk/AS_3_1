@@ -203,7 +203,7 @@ class Agent:
                 
             self.rewards.append(total_reward)
             self.policy.decay_epsilon()
-            pbar.set_postfix({'current_reward': self.rewards[-1]})
+            pbar.set_postfix({'current reward': self.rewards[-1], "current epsilon": self.policy.epsilon})
 
 
     def run(self, environment: gym.Env, seed: int=42, steps_limit:int=float("inf"))-> float:
