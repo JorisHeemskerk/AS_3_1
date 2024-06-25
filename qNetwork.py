@@ -62,9 +62,9 @@ class QNetwork(nn.Module):
 
             with autocast():
                 pred = self.forward(X)
-                loss = loss_fn(pred, y)
+                loss = loss_fn(pred, y.detach_())
             # pred = self.forward(X)
-            # loss = loss_fn(pred, y)
+            # loss = loss_fn(pred, y.detach_())
 
             optimizer.zero_grad()
 

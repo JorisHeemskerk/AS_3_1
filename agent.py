@@ -123,8 +123,9 @@ class Agent:
                     seed=seed,
                     steps_limit=steps_limit
                 )
+                
                 self.rewards.append(reward)
-            for _ in range(10):
+
                 self.train_batch(
                     gamma=gamma,
                     memory_batch_size=memory_batch_size,
@@ -174,4 +175,9 @@ class Agent:
     
     def plot(self)-> None:
         plt.plot(self.rewards)
+        x = list(range(len(self.rewards)))
+        z = np.polyfit(x, self.rewards, 1)
+        p = np.poly1d(z)
+        plt.plot(x, p(x))
+        plt.plot(list(range(-100, 200)))
         plt.show()
