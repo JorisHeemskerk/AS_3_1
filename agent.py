@@ -161,7 +161,8 @@ class Agent:
         @param seed: random seed for the environment initialisation
         """
         self.rewards = []
-        for _ in tqdm(range(n_episodes), desc="iteration "):
+        pbar = tqdm(range(n_episodes))
+        for _ in pbar:
             total_reward = 0
             start_state, _ = environment.reset(seed=seed)
             start_state = State(*start_state)
@@ -196,8 +197,10 @@ class Agent:
                     loss_fn=loss_fn,
                     optimizer=optimizer
                 ) 
+                
             self.rewards.append(total_reward)
             self.policy.decay_epsilon()
+            pbar.set_postfix({'current_reward': self.rewards[-1]})
 
 
     def run(self, environment: gym.Env, seed: int=42, steps_limit:int=float("inf"))-> float:
@@ -243,7 +246,7 @@ class Agent:
         z = np.polyfit(x, self.rewards, 1)
         p = np.poly1d(z)
         plt.plot(x, p(x))
-        plt.plot(list(range(-100, 200)))
+        plt.plot(list(range(-200, 200, round(400 / len(self.rewards)))))
         plt.title("Total reward for run per episode per iteration.")
         plt.xlabel("episode per iteration.")
         plt.ylabel("Total reward for run.")
