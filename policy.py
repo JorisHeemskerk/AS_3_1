@@ -16,6 +16,7 @@ class Policy:
         self, 
         network: nn.Module,
         optimizer: torch.optim.Optimizer,
+        loss_fn: nn.Module,
         epsilon: float,
         decay: float
     )-> None:
@@ -26,9 +27,10 @@ class Policy:
         @param epsilon: Epsilon, what did you expect...
         """
         self._network = network
-        self.optimizer = optimizer(self._network.parameters(), lr=0.001)
+        self.optimizer = torch.optim.Adam(self._network.parameters(), lr=0.001)
         self.epsilon = epsilon
         self.decay = decay
+        self.loss = torch.nn.MSELoss()
 
     def load(self, filename: str)-> None:
         """

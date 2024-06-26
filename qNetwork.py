@@ -29,7 +29,7 @@ class QNetwork(nn.Module):
             # else 
                 "cpu"
         )
-        self.to(self.device)
+        # self.to(self.device)
         print(f"Using \033[32m{self.device }\033[0m device\n")
 
     def forward(self, state: torch.Tensor)-> torch.Tensor:
