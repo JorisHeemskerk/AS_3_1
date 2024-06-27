@@ -109,7 +109,9 @@ class Agent:
         fig, ax = plt.subplots(ncols=2, figsize=(10,5))
         dh = display.display(fig, display_id=True)
         for i in pbar:
-            if i > n_episodes_to_average and np.mean(self.rewards[-n_episodes_to_average:]) >= threshold_stop_condition:
+            if i > n_episodes_to_average and self.mean_rewards[-1] >= threshold_stop_condition:
+                self.rewards.append(total_reward)
+                self.mean_rewards.append(np.mean(self.rewards[-n_episodes_to_average:]))
                 print("Done training, it good enough d=====(￣▽￣*)b")
                 return
             total_reward = 0
@@ -152,10 +154,10 @@ class Agent:
             # tqdm debug
             pbar.set_postfix({
                 f"\033[{'31' if self.mean_rewards[-1] < 0 else '32'}mlast {n_episodes_to_average} eps R avg'" : 
-                    f"\033[1;{'31' if self.mean_rewards[-1] < 0 else '32'}m{self.mean_rewards[-1]}\033[0;37m",
+                    f"\033[1;{'31' if self.mean_rewards[-1] < 0 else '32'}m{int(self.mean_rewards[-1])}\033[0;37m",
                 f"\033[{'31' if self.rewards[-1] < 0 else '32'}m{'R'}" : 
-                    f"\033[1;{'31' if self.rewards[-1] < 0 else '32'}m{self.rewards[-1]}\033[0;37m", 
-                "\033[0;36mε" : f"\033[1;36m{self.policy.epsilon}\033[0;37m", 
+                    f"\033[1;{'31' if self.rewards[-1] < 0 else '32'}m{int(self.rewards[-1])}\033[0;37m", 
+                "\033[0;36mε" : f"\033[1;36m{round(self.policy.epsilon, 2)}\033[0;37m", 
                 "\033[0;35mmem sz" : f"\033[1;35m{str(self.memory)}\033[0;37m",
                 f"last {n_episodes_to_average} eps Rs" : f"\033[1;37m{[int(reward) for reward in self.rewards[-n_episodes_to_average:]]}\033[0;37m"
             })
