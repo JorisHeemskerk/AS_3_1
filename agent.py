@@ -151,7 +151,7 @@ class Agent:
 
             # tqdm debug
             pbar.set_postfix({
-                f"\033[{'31' if self.mean_rewards[-1] < 0 else '32'}m{'last 20 eps R avg'}" : 
+                f"\033[{'31' if self.mean_rewards[-1] < 0 else '32'}mlast {n_episodes_to_average} eps R avg'" : 
                     f"\033[1;{'31' if self.mean_rewards[-1] < 0 else '32'}m{self.mean_rewards[-1]}\033[0;37m",
                 f"\033[{'31' if self.rewards[-1] < 0 else '32'}m{'R'}" : 
                     f"\033[1;{'31' if self.rewards[-1] < 0 else '32'}m{self.rewards[-1]}\033[0;37m", 
