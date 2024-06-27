@@ -110,8 +110,6 @@ class Agent:
         dh = display.display(fig, display_id=True)
         for i in pbar:
             if i > n_episodes_to_average and self.mean_rewards[-1] >= threshold_stop_condition:
-                self.rewards.append(total_reward)
-                self.mean_rewards.append(np.mean(self.rewards[-n_episodes_to_average:]))
                 print("Done training, it good enough d=====(￣▽￣*)b")
                 return
             total_reward = 0
