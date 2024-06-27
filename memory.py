@@ -63,13 +63,8 @@ class Memory:
         self._queue = matplotlib.empty(self.max_size, dtype=Transition)
         self.__idx = 0
 
-    # def is_full(self)-> bool:
-    #     """
-    #     Check if the memory is full.
-
-    #     @return bool confirming whether the memory is full
-    #     """
-    #     return self.__idx == self._max_idx
-
-    def __str__(self)-> str:
-        return str(self._queue)
+    def __str__(self, bar_size: int=20)-> str:
+        size_bar = int(self._size / self.max_size * bar_size)
+        idx_bar = int(self.__idx / self._max_idx * bar_size)
+        bar = f"{'■' * size_bar}{' ' * (bar_size - size_bar)}"
+        return '|' + '█' * idx_bar + bar[idx_bar:] + f"| {self.__idx + 1}/{self.max_size}" 

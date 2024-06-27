@@ -38,13 +38,14 @@ class QNetwork(nn.Module):
 
         @param state: input for the model
         """
-        state = state.to(self.device)
+        # state = state.to(self.device)
         logits = self.linear_relu_stack(state)
         return logits
     
     def train_model(
         self, 
-        train_loader: torch.utils.data.DataLoader, 
+        X: torch.tensor, 
+        Y: torch.tensor, 
         loss_fn: nn.Module, 
         optimizer: torch.optim
         )-> None:
@@ -56,21 +57,14 @@ class QNetwork(nn.Module):
         @param optimizer: optimizer function
         """
         # scaler = GradScaler() 
+
+        loss = loss_fn(X, Y)
+
+        optimizer.zero_grad()
+
+        # scaler.scale(loss).backward()
+        loss.backward()
         
-        for X, y in train_loader:
-            X, y = X.to(self.device), y.to(self.device)
-
-            # with autocast():
-            #     pred = self.forward(X)
-            #     loss = loss_fn(pred, y.detach_())
-            pred = self.forward(X)
-            loss = loss_fn(pred, y.detach_())
-
-            optimizer.zero_grad()
-
-            # scaler.scale(loss).backward()
-            loss.backward()
-            
-            # scaler.step(optimizer)
-            # scaler.update()
-            optimizer.step()
+        # scaler.step(optimizer)
+        # scaler.update()
+        optimizer.step()

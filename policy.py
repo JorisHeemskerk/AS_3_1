@@ -16,7 +16,6 @@ class Policy:
         self, 
         network: nn.Module,
         optimizer: torch.optim.Optimizer,
-        loss_fn: nn.Module,
         epsilon: float,
         decay: float
     )-> None:
@@ -27,7 +26,7 @@ class Policy:
         @param epsilon: Epsilon, what did you expect...
         """
         self._network = network
-        self.optimizer = torch.optim.Adam(self._network.parameters(), lr=0.001)
+        self.optimizer = optimizer(self._network.parameters(), lr=0.001)
         self.epsilon = epsilon
         self.decay = decay
         self.loss = torch.nn.MSELoss()
@@ -57,7 +56,7 @@ class Policy:
     
     def decay_epsilon(self)-> None:
         """
-        Decrease the epsilon by mulitplying it with a constant.
+        Decrease the epsilon by mulitplying it with a constant. *e^0.005
         """
         self.epsilon *= self.decay
         if self.epsilon <= 0.01:
@@ -67,7 +66,6 @@ class Policy:
         self, 
         X_train: list[State],
         y_train: list[torch.Tensor],
-        batch_size: int,
         loss_fn: nn.Module=nn.CrossEntropyLoss(),
     )-> None:
         """
@@ -75,23 +73,13 @@ class Policy:
 
         @param X_train: list of State object to train
         @param y_train: list of labels. 
-        @param batch_size: batch size for training the model
         @param num_epochs: number of epochs for training the model
         @param loss_fn: loss function, default=nn.CrossEntropyLoss
         """
-        train_dataset = torch.utils.data.TensorDataset(
-            torch.tensor([astuple(x) for x in X_train], dtype=torch.float32),
-            torch.stack(y_train, dim=0)
-        )
-
-        train_loader = torch.utils.data.DataLoader(
-            train_dataset, 
-            batch_size=batch_size, 
-            shuffle=True
-        )
-
+        
         self._network.train_model(
-            train_loader=train_loader, 
+            X=torch.stack(X_train, dim=0),
+            Y=torch.stack(y_train, dim=0),
             loss_fn=loss_fn, 
             optimizer=self.optimizer
         ) 
