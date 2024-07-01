@@ -1,7 +1,5 @@
 from memory import Memory
-from policy import Policy
 from transition import Transition
-from state import State
 
 import torch
 from torch import nn
@@ -10,6 +8,8 @@ from tqdm import tqdm
 import matplotlib.pyplot as plt
 import numpy as np
 from IPython import display
+import random
+from dataclasses import astuple
 
 
 class Agent:
@@ -17,17 +17,28 @@ class Agent:
     Agent class.
     """
 
-    def __init__(self, policy: Policy, memory: Memory)-> None:
+    def __init__(
+        self, 
+        network: nn.Module, 
+        memory: Memory, 
+        optimizer: torch.optim.Optimizer,
+        epsilon: float,
+        decay: float,
+        n_actions: int
+    )-> None:
         """
         Initializer for Agent.
 
-        @param policy: Agent's movement policy
         @param memory: Agent's memory
         """
-        self.policy = policy
+        self._network = network
         self.memory = memory
+        self.optimizer = optimizer(self._network.parameters(), lr=0.001)
+        self.epsilon = epsilon
+        self.decay = decay
         self.rewards = []
         self.mean_rewards = []
+        self.n_actions = n_actions
 
     def train_batch(
         self, 
@@ -36,48 +47,35 @@ class Agent:
         loss_fn: nn.Module=nn.CrossEntropyLoss(),
         )-> None:
         """
-        Train the policy on a batch of transitions.
+        Train the Q-network on a batch of transitions.
 
         @param gamma: discount value
         @param memory_batch_size: number of samples from memory
         @param loss_fn: loss function, default=nn.CrossEntropyLoss
         """
-        # TODO: miss wel bewaren zo idk
-        if self.memory._size <= memory_batch_size:
-            return
-
         batch: list[Transition] = self.memory.get_batch(
             batch_size=memory_batch_size
         )
+        batch = Transition(*zip(*batch))
 
-        train_Xs = []
-        train_ys = []
+        states = torch.FloatTensor(batch.state).to(self._network.device)
+        actions = torch.LongTensor(batch.action).unsqueeze(1).to(self._network.device)
+        rewards = torch.FloatTensor(batch.reward).to(self._network.device)
+        next_states = torch.FloatTensor(batch.next_state).to(self._network.device)
+        terminateds = torch.FloatTensor(batch.terminated).to(self._network.device)
 
-        for transition in batch:
-            next_state_q_values = self.policy.forward(
-                transition.next_state
-            )
+        current_q_values = self._network.forward(states).gather(1, actions)
+
+        # Detach makes sure no gradients are calculated
+        next_q_values = self._network.forward(next_states).max(1)[0].detach() 
         
-            best_value = max(
-                next_state_q_values
-            ) if not transition.terminated else 0
+        expected_q_values = rewards + (gamma * next_q_values * (1 - terminateds))
 
-            current_state_q_values = self.policy.forward(
-                transition.state
-            )
-            train_Xs.append(torch.clone(current_state_q_values))
-
-            current_state_q_values[
-                transition.action.value
-            ] = transition.reward if transition.terminated else \
-            transition.reward + gamma * best_value
-            
-            train_ys.append(current_state_q_values)
-
-        self.policy.train(
-            X_train=train_Xs,
-            y_train=train_ys,
+        self._network.train_model(
+            X=current_q_values, 
+            Y=expected_q_values.unsqueeze(1), 
             loss_fn=loss_fn,
+            optimizer=self.optimizer
         )
 
     def train(
@@ -93,7 +91,7 @@ class Agent:
         seed: int=42,
         )-> None:
         """
-        Train the policy.
+        Train the Q-Network
 
         @param environment: the environment
         @param n_iterations: number of iterations
@@ -105,31 +103,33 @@ class Agent:
         @param seed: random seed for the environment initialisation
         """
         self.rewards = []
-        pbar = tqdm(range(n_episodes))
+        self.mean_rewards = []
+
         fig, ax = plt.subplots(ncols=2, figsize=(10,5))
         dh = display.display(fig, display_id=True)
+
+        pbar = tqdm(range(n_episodes))
         for i in pbar:
             if i > n_episodes_to_average and self.mean_rewards[-1] >= threshold_stop_condition:
                 print("Done training, it good enough d=====(￣▽￣*)b")
                 return
             total_reward = 0
             start_state, _ = environment.reset(seed=seed)
-            start_state = State(*start_state)
-            step_number = 0
-            while step_number < steps_limit:
-                action = self.policy.select_action(start_state)
+            for _ in range(steps_limit):
+                
+                action = self.select_action(start_state)
+
                 state_prime, reward, is_terminated, truncated, _ = \
-                    environment.step(action.value)
-                state_prime = State(*state_prime)
+                    environment.step(action)
 
                 total_reward += reward
                 
                 self.memory.store(
                     Transition(
-                        start_state, 
+                        list(start_state), 
                         action,
                         reward,
-                        state_prime,
+                        list(state_prime),
                         is_terminated
                     )
                 )
@@ -138,13 +138,13 @@ class Agent:
                     break
 
                 start_state = state_prime
-                step_number += 1 
-                self.train_batch(
-                    gamma=gamma,
-                    memory_batch_size=memory_batch_size,
-                    loss_fn=loss_fn,
-                ) 
-                self.policy.decay_epsilon()
+                if len(self.memory) > memory_batch_size:
+                    self.train_batch(
+                        gamma=gamma,
+                        memory_batch_size=memory_batch_size,
+                        loss_fn=loss_fn,
+                    ) 
+                self.decay_epsilon()
                 
             self.rewards.append(total_reward)
             self.mean_rewards.append(np.mean(self.rewards[-n_episodes_to_average:]))
@@ -155,17 +155,15 @@ class Agent:
                     f"\033[1;{'31' if self.mean_rewards[-1] < 0 else '32'}m{int(self.mean_rewards[-1])}\033[0;37m",
                 f"\033[{'31' if self.rewards[-1] < 0 else '32'}m{'R'}" : 
                     f"\033[1;{'31' if self.rewards[-1] < 0 else '32'}m{int(self.rewards[-1])}\033[0;37m", 
-                "\033[0;36mε" : f"\033[1;36m{round(self.policy.epsilon, 2)}\033[0;37m", 
+                "\033[0;36mε" : f"\033[1;36m{round(self.epsilon, 2)}\033[0;37m", 
                 "\033[0;35mmem sz" : f"\033[1;35m{str(self.memory)}\033[0;37m",
-                f"last {n_episodes_to_average} eps Rs" : f"\033[1;37m{[int(reward) for reward in self.rewards[-n_episodes_to_average:]]}\033[0;37m"
             })
-            if i > 1:
+            if i > 1 and i % 10 == 0:
                 ax[0].cla()
                 ax[1].cla()
-                self.plot(sub_heading=f"{n_episodes} eps, {memory_batch_size} Mbsz, {self.policy.decay} dec", show=False, fig= fig, ax=ax)
+                self.plot(sub_heading=f"{n_episodes} eps, {memory_batch_size} Mbsz, {self.decay} dec", show=False, fig= fig, ax=ax)
                 dh.update(fig)
         plt.close()
-
 
     def run(self, environment: gym.Env, seed: int=42, steps_limit:int=float("inf"))-> float:
         """
@@ -176,13 +174,11 @@ class Agent:
         """
         total_reward = 0
         start_state, _ = environment.reset(seed=seed)
-        start_state = State(*start_state)
         step_number = 0
         while step_number < steps_limit:
-            action = self.policy.select_action(start_state)
+            action = self.select_action(start_state)
             state_prime, reward, is_terminated, truncated, _ = \
-                environment.step(action.value)
-            state_prime = State(*state_prime)
+                environment.step(action)
 
             total_reward += reward
             
@@ -204,7 +200,36 @@ class Agent:
         
         return total_reward
     
-    def plot(self, sub_heading: str='', show: bool=True, fig: plt.Figure=None, ax=None)-> None:
+    def decay_epsilon(self)-> None:
+        """
+        Decrease the epsilon by mulitplying it with a constant. *e^0.005
+        """
+        self.epsilon *= self.decay
+        if self.epsilon <= 0.01:
+            self.epsilon = 0.01
+
+    def select_action(self, state: np.ndarray)-> int:
+        """
+        Select action based on current Q-network.
+        
+        @param state: Current state to perform action in.
+
+        @return int with index of action to perform.
+        """
+        if random.random() < self.epsilon:
+            return random.choice(range(self.n_actions))
+        with torch.no_grad():
+            return torch.argmax(self._network.forward(
+                data=torch.FloatTensor(state).unsqueeze(0).to(self._network.device)
+            )).item()
+
+    def plot(
+        self, 
+        sub_heading: str='', 
+        show: bool=True, 
+        fig: plt.Figure=None, 
+        ax=None
+    )-> None:
         if not fig and not ax:
             fig, ax = plt.subplots(ncols=2, figsize=(10,5))
         assert fig is not None and ax is not None, "forgot to pass fig or ax."

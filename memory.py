@@ -31,9 +31,6 @@ class Memory:
             self.__idx = 0
         if self._size < self._max_idx:
             self._size += 1
-        # assert self.__idx < self._max_idx, \
-        #     f"OH NO! You tried to insert the {self.__idx + 2}th element in a" \
-        #     f"memory object that is only {self.max_size} elements long."
 
         self._queue[self.__idx] = transition
         self.__idx += 1
@@ -68,3 +65,6 @@ class Memory:
         idx_bar = int(self.__idx / self._max_idx * bar_size)
         bar = f"{'■' * size_bar}{' ' * (bar_size - size_bar)}"
         return '|' + '█' * idx_bar + bar[idx_bar:] + f"| {self.__idx + 1}/{self.max_size}" 
+    
+    def __len__(self)-> int:
+        return self._size

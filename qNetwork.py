@@ -1,7 +1,5 @@
 import torch
 from torch import nn
-from torch.cuda.amp import autocast, GradScaler
-from tqdm import tqdm
 
 
 class QNetwork(nn.Module):
@@ -10,7 +8,7 @@ class QNetwork(nn.Module):
 
     Extends nn.Module class
     """
-    def __init__(self)-> None:
+    def __init__(self, device:str=None)-> None:
         """
         Initializer for QNetwork.
         """
@@ -22,25 +20,25 @@ class QNetwork(nn.Module):
             nn.ReLU(),
             nn.Linear(120, 4),
         )
-        self.device = (
-            # "cuda"if torch.cuda.is_available()
-            # else 
-            #     "mps" if torch.backends.mps.is_available()
-            # else 
-                "cpu"
-        )
-        # self.to(self.device)
+        self.device = device
+        if not device:
+            self.device = (
+                "cuda"if torch.cuda.is_available()
+                else 
+                    "mps" if torch.backends.mps.is_available()
+                else 
+                    "cpu"
+            )
+        self.to(self.device)
         print(f"Using \033[32m{self.device }\033[0m device\n")
 
-    def forward(self, state: torch.Tensor)-> torch.Tensor:
+    def forward(self, data: torch.Tensor)-> torch.Tensor:
         """
         Gets the output from the model.
 
-        @param state: input for the model
+        @param data: input for the model
         """
-        # state = state.to(self.device)
-        logits = self.linear_relu_stack(state)
-        return logits
+        return self.linear_relu_stack(data)
     
     def train_model(
         self, 
@@ -56,15 +54,23 @@ class QNetwork(nn.Module):
         @param loss_fn: loss function
         @param optimizer: optimizer function
         """
-        # scaler = GradScaler() 
-
         loss = loss_fn(X, Y)
-
         optimizer.zero_grad()
-
-        # scaler.scale(loss).backward()
-        loss.backward()
-        
-        # scaler.step(optimizer)
-        # scaler.update()
+        loss.backward()        
         optimizer.step()
+
+    def load(self, filename: str)-> None:
+        """
+        Loads network from filename
+
+        @param filename: desired filename (+ path) of the model
+        """
+        self.load_state_dict(torch.load(filename))
+
+    def save(self, filename: str)-> None:
+        """
+        saves network to filename
+
+        @param filename: desired filename (+ path)
+        """
+        torch.save(self.state_dict(), filename)
