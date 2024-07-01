@@ -112,6 +112,7 @@ class Agent:
         for i in pbar:
             if i > n_episodes_to_average and self.mean_rewards[-1] >= threshold_stop_condition:
                 print("Done training, it good enough d=====(￣▽￣*)b")
+                plt.close()
                 return
             total_reward = 0
             start_state, _ = environment.reset(seed=seed)
@@ -151,7 +152,7 @@ class Agent:
 
             # tqdm debug
             pbar.set_postfix({
-                f"\033[{'31' if self.mean_rewards[-1] < 0 else '32'}mlast {n_episodes_to_average} eps R avg'" : 
+                f"\033[{'31' if self.mean_rewards[-1] < 0 else '32'}mlast {n_episodes_to_average} eps R avg" : 
                     f"\033[1;{'31' if self.mean_rewards[-1] < 0 else '32'}m{int(self.mean_rewards[-1])}\033[0;37m",
                 f"\033[{'31' if self.rewards[-1] < 0 else '32'}m{'R'}" : 
                     f"\033[1;{'31' if self.rewards[-1] < 0 else '32'}m{int(self.rewards[-1])}\033[0;37m", 
