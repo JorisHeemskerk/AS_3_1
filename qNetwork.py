@@ -14,11 +14,11 @@ class QNetwork(nn.Module):
         """
         super().__init__()
         self.linear_relu_stack = nn.Sequential(
-            nn.Linear(8, 150),
+            nn.Linear(4, 150),
             nn.ReLU(),
             nn.Linear(150, 120),
             nn.ReLU(),
-            nn.Linear(120, 4),
+            nn.Linear(120, 5),
         )
         self.device = device
         if not device:
