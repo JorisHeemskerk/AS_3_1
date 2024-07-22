@@ -18,7 +18,7 @@ class QNetwork(nn.Module):
             nn.ReLU(),
             nn.Linear(150, 120),
             nn.ReLU(),
-            nn.Linear(120, 5),
+            nn.Linear(120, 4),
         )
         self.device = device
         if not device:

@@ -231,7 +231,7 @@ class Agent:
         fig: plt.Figure=None, 
         ax=None
     )-> None:
-        if not fig and not ax:
+        if fig is None or ax is None:
             fig, ax = plt.subplots(ncols=2, figsize=(10,5))
         assert fig is not None and ax is not None, "forgot to pass fig or ax."
 
@@ -242,7 +242,6 @@ class Agent:
         z = np.polyfit(x, self.rewards, 1)
         p = np.poly1d(z)
         ax[0].plot(x, p(x))
-        ax[0].plot(list(range(-200, 200, int(np.ceil(400 / len(self.rewards))))))
         ax[0].set_title(f"Total reward for run per iteration.")
         ax[0].set_xlabel("iteration")
         ax[0].set_ylabel("total reward for run")
