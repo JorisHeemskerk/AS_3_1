@@ -2,7 +2,6 @@ from memory import Memory
 from transition import Transition
 from agent import Agent
 
-import time
 import torch
 from torch import nn
 

@@ -1,7 +1,6 @@
 from memory import Memory
 from transition import Transition
 
-import time
 import torch
 from torch import nn
 import gymnasium as gym
