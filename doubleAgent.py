@@ -41,9 +41,6 @@ class DoubleAgent(Agent):
         @param memory_batch_size: number of samples from memory
         @param loss_fn: loss function, default=nn.CrossEntropyLoss
         """
-        # PROFILING
-        start = time.time()
-
         batch: list[Transition] = self.memory.get_batch(
             batch_size=memory_batch_size
         )
@@ -57,8 +54,8 @@ class DoubleAgent(Agent):
 
         current_q_values = self._network.forward(states).gather(1, actions)
 
-        # Detach makes sure no gradients are calculated
-        next_q_values = self._target_network.forward(next_states).max(1)[0].detach() 
+        with torch.no_grad():
+            next_q_values = self._target_network.forward(next_states).max(1)[0] 
         
         expected_q_values = rewards + (gamma * next_q_values * (1 - terminateds))
 
@@ -70,10 +67,6 @@ class DoubleAgent(Agent):
         )
 
         self.align_target_network()   
-
-        # PROFILING
-        self.agent_timings["train_batch"][0] += 1
-        self.agent_timings["train_batch"][1] += time.time() - start     
 
     def align_target_network(self):
         for param, target_param in zip(
