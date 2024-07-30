@@ -25,11 +25,9 @@ class QNetwork(nn.Module):
         self.device = device
         if not device:
             self.device = (
-                "cuda"if torch.cuda.is_available()
-                else 
-                    "mps" if torch.backends.mps.is_available()
-                else 
-                    "cpu"
+                "cuda" if torch.cuda.is_available() else 
+                "mps" if torch.backends.mps.is_available() else 
+                "cpu"
             )
         self.to(self.device)
         print(f"Using \033[32m{self.device }\033[0m device\n")
@@ -52,12 +50,12 @@ class QNetwork(nn.Module):
         """
         Trains the model.
 
-        @param train_loader: trainingsdata
+        @param train_loader: training data
         @param loss_fn: loss function
         @param optimizer: optimizer function
         """
         loss = loss_fn(X, Y)
-        optimizer.zero_grad()
+        optimizer.zero_grad(set_to_none=True)
         loss.backward()        
         optimizer.step()
 

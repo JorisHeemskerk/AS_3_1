@@ -4,7 +4,6 @@ from agent import Agent
 
 import torch
 from torch import nn
-from dataclasses import astuple
 
 
 class DoubleAgent(Agent):
@@ -41,7 +40,6 @@ class DoubleAgent(Agent):
         @param memory_batch_size: number of samples from memory
         @param loss_fn: loss function, default=nn.CrossEntropyLoss
         """
-        
         batch: list[Transition] = self.memory.get_batch(
             batch_size=memory_batch_size
         )
@@ -55,8 +53,8 @@ class DoubleAgent(Agent):
 
         current_q_values = self._network.forward(states).gather(1, actions)
 
-        # Detach makes sure no gradients are calculated
-        next_q_values = self._target_network.forward(next_states).max(1)[0].detach() 
+        with torch.no_grad():
+            next_q_values = self._target_network.forward(next_states).max(1)[0] 
         
         expected_q_values = rewards + (gamma * next_q_values * (1 - terminateds))
 
@@ -67,7 +65,7 @@ class DoubleAgent(Agent):
             optimizer=self.optimizer
         )
 
-        self.align_target_network()        
+        self.align_target_network()   
 
     def align_target_network(self):
         for param, target_param in zip(

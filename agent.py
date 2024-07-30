@@ -9,7 +9,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 from IPython import display
 import random
-from dataclasses import astuple
 
 
 class Agent:
@@ -66,8 +65,8 @@ class Agent:
 
         current_q_values = self._network.forward(states).gather(1, actions)
 
-        # Detach makes sure no gradients are calculated
-        next_q_values = self._network.forward(next_states).max(1)[0].detach() 
+        with torch.no_grad():
+            next_q_values = self._network.forward(next_states).max(1)[0] 
         
         expected_q_values = rewards + (gamma * next_q_values * (1 - terminateds))
 
@@ -107,7 +106,7 @@ class Agent:
 
         fig, ax = plt.subplots(ncols=2, figsize=(10,5))
         dh = display.display(fig, display_id=True)
-
+        
         pbar = tqdm(range(n_episodes))
         for i in pbar:
             if i > n_episodes_to_average and self.mean_rewards[-1] >= threshold_stop_condition:
@@ -183,16 +182,6 @@ class Agent:
 
             total_reward += reward
             
-            self.memory.store(
-                Transition(
-                    start_state, 
-                    action,
-                    reward,
-                    state_prime,
-                    is_terminated
-                )
-            )
-
             if is_terminated or truncated:
                 break
 
@@ -203,11 +192,9 @@ class Agent:
     
     def decay_epsilon(self)-> None:
         """
-        Decrease the epsilon by mulitplying it with a constant. *e^0.005
+        Decrease the epsilon by multiplying it with a constant. *e^0.005
         """
-        self.epsilon *= self.decay
-        if self.epsilon <= 0.01:
-            self.epsilon = 0.01
+        self.epsilon = max(self.epsilon * self.decay, 0.01)
 
     def select_action(self, state: np.ndarray)-> int:
         """
@@ -218,12 +205,13 @@ class Agent:
         @return int with index of action to perform.
         """
         if random.random() < self.epsilon:
-            return random.choice(range(self.n_actions))
-        with torch.no_grad():
-            return torch.argmax(self._network.forward(
-                data=torch.FloatTensor(state).unsqueeze(0).to(self._network.device)
-            )).item()
-
+            return random.randint(0, self.n_actions - 1)
+        else:
+            with torch.no_grad():
+                return self._network.forward(
+                    data=torch.FloatTensor(state).unsqueeze(0).to(self._network.device)
+                ).argmax().item()
+        
     def plot(
         self, 
         sub_heading: str='', 
