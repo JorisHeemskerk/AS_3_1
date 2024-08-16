@@ -171,13 +171,19 @@ class Agent:
                 "\033[0;36mε" : f"\033[1;36m{round(self.epsilon, 2)}\033[0;37m", 
                 "\033[0;35mmem sz" : f"\033[1;35m{str(self.memory)}\033[0;37m",
             })
-            if i > 1 and i % 10 == 0:
+            if i > 1 and i % 10 == 9:
                 ax[0, 0].cla()
                 ax[0, 1].cla()
                 ax[1, 0].cla()
                 ax[1, 1].cla()
                 self.plot(sub_heading=f"{n_episodes} eps, {memory_batch_size} Mbsz, {self.decay} dec", show=False, fig= fig, ax=ax)
                 dh.update(fig)
+        ax[0, 0].cla()
+        ax[0, 1].cla()
+        ax[1, 0].cla()
+        ax[1, 1].cla()
+        self.plot(sub_heading=f"{n_episodes} eps, {memory_batch_size} Mbsz, {self.decay} dec", show=False, fig= fig, ax=ax)
+        dh.update(fig)
         plt.close()
 
     def run(self, environment: gym.Env, seed: int=42, steps_limit:int=float("inf"))-> float:
