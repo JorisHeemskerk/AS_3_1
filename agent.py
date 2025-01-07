@@ -158,6 +158,8 @@ class Agent:
                         loss_fn=loss_fn,
                     ) 
                 self.decay_epsilon()
+            else: 
+                self._losses.append(i)
                 
             self.rewards.append(total_reward)
             self.mean_rewards.append(np.mean(self.rewards[-n_episodes_to_average:]))
