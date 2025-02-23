@@ -40,6 +40,7 @@ class Agent:
         self.n_actions = n_actions
         self._wins = []
         self._losses = []
+        self._partial_wins = []
 
     def train_batch(
         self, 
@@ -108,12 +109,13 @@ class Agent:
         self._wins = []
         self._losses = []
 
-        fig, ax = plt.subplots(
-            ncols=2, 
-            nrows=2, 
-            figsize=(10,5), 
-            gridspec_kw={'height_ratios': [4, .5]}
-        )
+        fig = plt.figure(figsize=(10, 5))
+        gs = fig.add_gridspec(2, 2, height_ratios=[8, 1])  
+        ax = np.array([
+            [fig.add_subplot(gs[0, 0]), fig.add_subplot(gs[0, 1])],
+            [fig.add_subplot(gs[1, :]), None]
+        ])
+
         dh = display.display(fig, display_id=True)
         
         pbar = tqdm(range(n_episodes))
@@ -147,6 +149,9 @@ class Agent:
                     self._wins.append(i)
                     break 
                 elif truncated:
+                    # if state_prime[4] != len(environment._entities.targets.scalars):
+                    #     self._partial_wins.append(i)
+                    # else: 
                     self._losses.append(i)
                     break
 
@@ -159,7 +164,10 @@ class Agent:
                     ) 
                 self.decay_epsilon()
             else: 
-                self._losses.append(i)
+                if sum(environment._entities.targets.scalars[:, 12]) != -len(environment._entities.targets.scalars):
+                    self._partial_wins.append(i)
+                else: 
+                    self._losses.append(i)
                 
             self.rewards.append(total_reward)
             self.mean_rewards.append(np.mean(self.rewards[-n_episodes_to_average:]))
@@ -177,13 +185,11 @@ class Agent:
                 ax[0, 0].cla()
                 ax[0, 1].cla()
                 ax[1, 0].cla()
-                ax[1, 1].cla()
                 self.plot(sub_heading=f"{n_episodes} eps, {memory_batch_size} Mbsz, {self.decay} dec", show=False, fig= fig, ax=ax)
                 dh.update(fig)
         ax[0, 0].cla()
         ax[0, 1].cla()
         ax[1, 0].cla()
-        ax[1, 1].cla()
         self.plot(sub_heading=f"{n_episodes} eps, {memory_batch_size} Mbsz, {self.decay} dec", show=False, fig= fig, ax=ax)
         dh.update(fig)
         plt.close()
@@ -243,12 +249,13 @@ class Agent:
         ax=None
     )-> None:
         if fig is None or ax is None:
-            fig, ax = plt.subplots(
-                ncols=2, 
-                nrows=2, 
-                figsize=(10,5), 
-                gridspec_kw={'height_ratios': [4, .5]}
-            )
+            fig = plt.figure(figsize=(10, 5))
+            gs = fig.add_gridspec(2, 2, height_ratios=[8, 1])  
+            ax = np.array([
+                [fig.add_subplot(gs[0, 0]), fig.add_subplot(gs[0, 1])],
+                [fig.add_subplot(gs[1, :]), None]
+            ])
+
         assert fig is not None and ax is not None, "forgot to pass fig or ax."
 
         fig.suptitle(sub_heading, size=16, color="purple")
@@ -272,12 +279,12 @@ class Agent:
         # Create the horizontal bar below the first plot
         ax[1, 0].broken_barh([(i, 1) for i in self._wins], (0, 1), facecolors='green')
         ax[1, 0].broken_barh([(i, 1) for i in self._losses], (0, 1), facecolors='red')
+        ax[1, 0].broken_barh([(i, 1) for i in self._partial_wins], (0, 1), facecolors='orange')
         ax[1, 0].set_xlim(0, len(self.rewards))
         ax[1, 0].yaxis.set_ticklabels([])
-        ax[1, 0].set_xlabel("green if win, red if crash")
+        ax[1, 0].set_xlabel("green if win, red if crash, orange if partial")
 
         # Create an empty subplot for alignment
-        ax[1, 1].axis('off')
         plt.tight_layout()
 
         if show:

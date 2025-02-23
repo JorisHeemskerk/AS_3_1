@@ -14,7 +14,7 @@ class QNetwork(nn.Module):
         """
         super().__init__()
         self.linear_relu_stack = nn.Sequential(
-            nn.Linear(4, 150),
+            nn.Linear(5, 150),
             nn.ReLU(),
             nn.Linear(150, 128),
             nn.ReLU(),
